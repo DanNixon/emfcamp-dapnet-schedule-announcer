@@ -67,7 +67,7 @@
             doCheck = false;
           };
 
-          emfcamp-dapnet-schedule-announcer-container-image = pkgs.dockerTools.buildImage {
+          container-image = pkgs.dockerTools.buildImage {
             name = "emfcamp-dapnet-schedule-announcer";
             tag = "latest";
             created = "now";
