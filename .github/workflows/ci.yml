@@ -60,7 +60,7 @@ jobs:
           set -x
 
           # Build image via Nix and take the resulting path as the local container registry
-          local_cr="docker-archive://$(nix build .#emfcamp-dapnet-schedule-announcer-container-image --no-link --print-out-paths)"
+          local_cr="docker-archive://$(nix build .#container-image --no-link --print-out-paths)"
 
           # The container registry to push images to (GHCR)
           remote_cr="docker://ghcr.io/dannixon/emfcamp-dapnet-schedule-announcer"
