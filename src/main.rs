@@ -67,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
     let schedule_client = ScheduleClient::new(cli.api_url);
 
     let event_start_offset = -Duration::try_seconds(cli.pre_event_announcement_time)
-        .ok_or_else(|| anyhow::anyhow!("doot"))?;
+        .ok_or_else(|| anyhow::anyhow!("Invalid pre event announcement time"))?;
     info!("Event start offset: {:?}", event_start_offset);
 
     let mut announcer = Announcer::new(
