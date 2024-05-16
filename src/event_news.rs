@@ -1,21 +1,28 @@
 use dapnet_api::{OutgoingNews, OutgoingNewsBuilder};
 use emfcamp_schedule_api::schedule::event::Event;
+use tracing::error;
 
 pub(crate) trait EventExt {
-    fn to_rubric_news(&self) -> OutgoingNews;
+    fn to_rubric_news(&self) -> Option<OutgoingNews>;
 }
 
 impl EventExt for Event {
-    fn to_rubric_news(&self) -> OutgoingNews {
+    fn to_rubric_news(&self) -> Option<OutgoingNews> {
         let venue = shorten_venue_name(&self.venue);
         let msg = format!("{venue}: {}", self.title);
 
-        OutgoingNewsBuilder::default()
+        match OutgoingNewsBuilder::default()
             .rubric("emfcamp".to_string())
             .number(news_number_for_venue(&self.venue))
             .text(msg)
             .build()
-            .expect("outgoing news should be built")
+        {
+            Ok(news) => Some(news),
+            Err(e) => {
+                error!("Failed to build news: {e}");
+                None
+            }
+        }
     }
 }
 
