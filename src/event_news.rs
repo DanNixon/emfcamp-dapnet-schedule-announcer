@@ -24,9 +24,9 @@ mod venues {
     pub(crate) const STAGE_A: &str = "Stage A";
     pub(crate) const STAGE_B: &str = "Stage B";
     pub(crate) const STAGE_C: &str = "Stage C";
-    pub(crate) const WORKSHOP_1: &str = "Workshop 1";
+    pub(crate) const WORKSHOP_1: &str = "Workshop 1 (NottingHack)";
     pub(crate) const WORKSHOP_2: &str = "Workshop 2";
-    pub(crate) const WORKSHOP_3: &str = "Workshop 3";
+    pub(crate) const WORKSHOP_3: &str = "Workshop 3 (Furry High Commission)";
     pub(crate) const WORKSHOP_4: &str = "Workshop 4";
     pub(crate) const WORKSHOP_5: &str = "Workshop 5";
     pub(crate) const NULL_SECTOR: &str = "Null Sector";
