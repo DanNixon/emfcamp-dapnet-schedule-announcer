@@ -3,7 +3,7 @@ mod event_news;
 use crate::event_news::EventExt;
 use chrono::{Duration, Utc};
 use clap::Parser;
-use dapnet_api::{Client as DapnetClient, OutgoingCallBuilder, OutgoingNews};
+use dapnet_api::{Client as DapnetClient, OutgoingCallBuilder};
 use emfcamp_schedule_api::{
     announcer::{Announcer, AnnouncerPollResult, AnnouncerSettingsBuilder},
     Client as ScheduleClient,
@@ -101,18 +101,20 @@ async fn handle_announcer_event(
 ) {
     match msg {
         Ok(AnnouncerPollResult::Event(event)) => {
-            let news: OutgoingNews = event.to_rubric_news();
-            info!("News for event: {:?}", news);
+            if let Some(news) = event.to_rubric_news() {
+                info!("News for event: {:?}", news);
 
-            if !dry_run {
-                match dapnet.new_news(&news).await {
-                    Ok(_) => {
-                        info!("News sent");
-                        counter!("dapnet_event_announcements", "result" => "ok").increment(1);
-                    }
-                    Err(e) => {
-                        error!("Failed to send news: {e}");
-                        counter!("dapnet_event_announcements", "result" => "error").increment(1);
+                if !dry_run {
+                    match dapnet.new_news(&news).await {
+                        Ok(_) => {
+                            info!("News sent");
+                            counter!("dapnet_event_announcements", "result" => "ok").increment(1);
+                        }
+                        Err(e) => {
+                            error!("Failed to send news: {e}");
+                            counter!("dapnet_event_announcements", "result" => "error")
+                                .increment(1);
+                        }
                     }
                 }
             }
