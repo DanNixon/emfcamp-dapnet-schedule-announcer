@@ -11,7 +11,7 @@ impl EventExt for Event {
         let venue = Venue::from_schedule_name(&self.venue);
 
         let news_number = news_number_for_venue(&venue);
-        let msg = format!("{}: {}", venue_short_name(venue), self.title);
+        let msg = format!("<{}> {}", venue_short_name(venue), self.title);
 
         match OutgoingNewsBuilder::default()
             .rubric("emfcamp".to_string())
