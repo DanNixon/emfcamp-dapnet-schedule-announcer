@@ -59,7 +59,7 @@
               lockFile = ./Cargo.lock;
 
               outputHashes = {
-                "emfcamp-schedule-api-0.0.1" = "sha256-4J+7gwxQNydb9COOL58H+qO8iOTSsX8mW7lTdolH9d8=";
+                "emfcamp-schedule-api-0.0.1" = "sha256-okre8nWBh7+/UvdIUus36l5LN1jWQKKia0n2uywAIC8=";
               };
             };
 
