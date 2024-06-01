@@ -11,6 +11,7 @@ use emfcamp_schedule_api::{
 use metrics::{counter, describe_counter};
 use metrics_exporter_prometheus::PrometheusBuilder;
 use std::net::SocketAddr;
+use tokio::time::Duration as TokioDuration;
 use tracing::{error, info, warn};
 use url::Url;
 
@@ -124,16 +125,19 @@ async fn handle_announcer_event(
                     info!("News for event: {:?}", news);
 
                     if !dry_run {
-                        match dapnet.new_news(&news).await {
-                            Ok(_) => {
-                                info!("News sent");
-                                counter!("dapnet_event_announcements", "target" => "rubric", "result" => "ok")
-                                    .increment(1);
-                            }
-                            Err(e) => {
-                                error!("Failed to send news: {e}");
-                                counter!("dapnet_event_announcements", "target" => "rubric", "result" => "error")
-                                    .increment(1);
+                        for attempt in 1..6 {
+                            info!("Trying to send news... (attempt {attempt})");
+                            match dapnet.new_news(&news).await {
+                                Ok(_) => {
+                                    info!("News sent");
+                                    counter!("dapnet_event_announcements", "target" => "rubric", "result" => "ok").increment(1);
+                                    break;
+                                }
+                                Err(e) => {
+                                    error!("Failed to send news: {e}");
+                                    counter!("dapnet_event_announcements", "target" => "rubric", "result" => "error").increment(1);
+                                    tokio::time::sleep(TokioDuration::from_secs(1)).await;
+                                }
                             }
                         }
                     }
@@ -144,16 +148,19 @@ async fn handle_announcer_event(
                     info!("Call for event: {:?}", call);
 
                     if !dry_run {
-                        match dapnet.new_call(&call).await {
-                            Ok(_) => {
-                                info!("Call sent");
-                                counter!("dapnet_event_announcements", "target" => "call", "result" => "ok")
-                                    .increment(1);
-                            }
-                            Err(e) => {
-                                error!("Failed to send call: {e}");
-                                counter!("dapnet_event_announcements", "target" => "call", "result" => "error")
-                                    .increment(1);
+                        for attempt in 1..6 {
+                            info!("Trying to send news... (attempt {attempt})");
+                            match dapnet.new_call(&call).await {
+                                Ok(_) => {
+                                    info!("Call sent");
+                                    counter!("dapnet_event_announcements", "target" => "call", "result" => "ok").increment(1);
+                                    break;
+                                }
+                                Err(e) => {
+                                    error!("Failed to send call: {e}");
+                                    counter!("dapnet_event_announcements", "target" => "call", "result" => "error").increment(1);
+                                    tokio::time::sleep(TokioDuration::from_secs(1)).await;
+                                }
                             }
                         }
                     }
