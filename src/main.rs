@@ -1,8 +1,8 @@
-mod event_news;
+mod event;
 
-use crate::event_news::EventExt;
+use crate::event::EventExt;
 use chrono::{Duration, Utc};
-use clap::Parser;
+use clap::{Parser, Subcommand};
 use dapnet_api::{Client as DapnetClient, OutgoingCallBuilder};
 use emfcamp_schedule_api::{
     announcer::{Announcer, AnnouncerPollResult, AnnouncerSettingsBuilder},
@@ -37,13 +37,30 @@ struct Cli {
     #[arg(long, env, default_value = "120")]
     pre_event_announcement_time: i64,
 
-    /// Do not send notifications for events (the start up check page is still sent)
+    /// Do not send notifications for events but log what would be sent (the start up check page is still sent)
     #[arg(long, env, default_value = "false")]
     dry_run: bool,
 
     /// Address on which to run the metrics endpoint
     #[arg(long, env, default_value = "127.0.0.1:9090")]
     observability_address: SocketAddr,
+
+    #[clap(subcommand)]
+    mode: Mode,
+}
+
+#[derive(Debug, Subcommand)]
+enum Mode {
+    /// Send news to a single rubric
+    Rubric {
+        #[arg(long, env, default_value = "emfcamp")]
+        rubric: String,
+    },
+    /// Send calls/pages to a set of individual recipients
+    Call {
+        #[arg(short, long = "recipient", env, value_name = "RECIPIENT")]
+        recipients: Vec<String>,
+    },
 }
 
 #[tokio::main]
@@ -88,7 +105,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
             msg = announcer.poll() => {
-                handle_announcer_event(&dapnet, cli.dry_run, msg).await;
+                handle_announcer_event(&dapnet, cli.dry_run, &cli.mode, msg).await;
             }
         }
     }
@@ -97,28 +114,52 @@ async fn main() -> anyhow::Result<()> {
 async fn handle_announcer_event(
     dapnet: &DapnetClient,
     dry_run: bool,
+    mode: &Mode,
     msg: emfcamp_schedule_api::Result<AnnouncerPollResult>,
 ) {
     match msg {
-        Ok(AnnouncerPollResult::Event(event)) => {
-            if let Some(news) = event.to_rubric_news() {
-                info!("News for event: {:?}", news);
+        Ok(AnnouncerPollResult::Event(event)) => match mode {
+            Mode::Rubric { rubric } => {
+                if let Some(news) = event.to_rubric_news(rubric.clone()) {
+                    info!("News for event: {:?}", news);
 
-                if !dry_run {
-                    match dapnet.new_news(&news).await {
-                        Ok(_) => {
-                            info!("News sent");
-                            counter!("dapnet_event_announcements", "result" => "ok").increment(1);
-                        }
-                        Err(e) => {
-                            error!("Failed to send news: {e}");
-                            counter!("dapnet_event_announcements", "result" => "error")
-                                .increment(1);
+                    if !dry_run {
+                        match dapnet.new_news(&news).await {
+                            Ok(_) => {
+                                info!("News sent");
+                                counter!("dapnet_event_announcements", "target" => "rubric", "result" => "ok")
+                                    .increment(1);
+                            }
+                            Err(e) => {
+                                error!("Failed to send news: {e}");
+                                counter!("dapnet_event_announcements", "target" => "rubric", "result" => "error")
+                                    .increment(1);
+                            }
                         }
                     }
                 }
             }
-        }
+            Mode::Call { recipients } => {
+                if let Some(call) = event.to_call(recipients.clone()) {
+                    info!("Call for event: {:?}", call);
+
+                    if !dry_run {
+                        match dapnet.new_call(&call).await {
+                            Ok(_) => {
+                                info!("Call sent");
+                                counter!("dapnet_event_announcements", "target" => "call", "result" => "ok")
+                                    .increment(1);
+                            }
+                            Err(e) => {
+                                error!("Failed to send call: {e}");
+                                counter!("dapnet_event_announcements", "target" => "call", "result" => "error")
+                                    .increment(1);
+                            }
+                        }
+                    }
+                }
+            }
+        },
         Err(e) => {
             warn!("{e}");
         }

@@ -1,20 +1,39 @@
-use dapnet_api::{OutgoingNews, OutgoingNewsBuilder};
+use dapnet_api::{OutgoingCall, OutgoingCallBuilder, OutgoingNews, OutgoingNewsBuilder};
 use emfcamp_schedule_api::schedule::event::Event;
 use tracing::error;
 
 pub(crate) trait EventExt {
-    fn to_rubric_news(&self) -> Option<OutgoingNews>;
+    fn to_call(&self, recipients: Vec<String>) -> Option<OutgoingCall>;
+    fn to_rubric_news(&self, rubric: String) -> Option<OutgoingNews>;
 }
 
 impl EventExt for Event {
-    fn to_rubric_news(&self) -> Option<OutgoingNews> {
+    fn to_call(&self, recipients: Vec<String>) -> Option<OutgoingCall> {
+        let venue = Venue::from_schedule_name(&self.venue);
+
+        let msg = format!("<{}> {}", venue_short_name(venue), self.title);
+
+        match OutgoingCallBuilder::default()
+            .recipients(recipients)
+            .text(msg)
+            .build()
+        {
+            Ok(news) => Some(news),
+            Err(e) => {
+                error!("Failed to build call: {e}");
+                None
+            }
+        }
+    }
+
+    fn to_rubric_news(&self, rubric: String) -> Option<OutgoingNews> {
         let venue = Venue::from_schedule_name(&self.venue);
 
         let news_number = news_number_for_venue(&venue);
         let msg = format!("<{}> {}", venue_short_name(venue), self.title);
 
         match OutgoingNewsBuilder::default()
-            .rubric("emfcamp".to_string())
+            .rubric(rubric)
             .number(news_number)
             .text(msg)
             .build()
