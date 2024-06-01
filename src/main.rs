@@ -80,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Setup and test DAPNET client
     let dapnet = DapnetClient::new(&cli.dapnet_username, &cli.dapnet_password);
-    send_startup_page(&dapnet).await?;
+    send_startup_page(&dapnet, &cli.dapnet_username).await?;
 
     loop {
         tokio::select! {
@@ -126,17 +126,17 @@ async fn handle_announcer_event(
     }
 }
 
-async fn send_startup_page(dapnet: &DapnetClient) -> anyhow::Result<()> {
+async fn send_startup_page(dapnet: &DapnetClient, recipient: &str) -> anyhow::Result<()> {
     info!("Checking DAPNET connection...");
 
     match dapnet
         .new_call(
             &OutgoingCallBuilder::default()
                 .text(format!(
-                    "M0NXN: EMF sched. anncr. start at {}",
+                    "{recipient}: EMF sched. anncr. start at {}",
                     Utc::now().format("%d %H:%M %Z")
                 ))
-                .recipients(vec!["m0nxn".to_string()])
+                .recipients(vec![recipient.to_string()])
                 .transmitter_groups(vec!["uk-all".to_string()])
                 .build()?,
         )
