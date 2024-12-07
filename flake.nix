@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-24.11";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -21,7 +21,7 @@
         };
 
         lintingRustFlags = "-D unused-crate-dependencies";
-      in rec {
+      in {
         devShell = pkgs.mkShell {
           packages = with pkgs; [
             # Rust toolchain
